@@ -1,0 +1,1 @@
+Usamos como agente o Gemini para gerar os documentos e para validação técnica o Claude que validou as idéias e tudo o que foi gerado pelo Gemini e sua viabilidade.
