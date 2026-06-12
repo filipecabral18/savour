@@ -1,0 +1,140 @@
+# Pipeline de CI/CD para o Projeto Savour (Monorepo)
+#
+# Para que este workflow funcione corretamente, as seguintes SECRETS devem ser cadastradas no GitHub:
+# - VERCEL_TOKEN: Token de acesso pessoal gerado em https://vercel.com/account/tokens
+# - VERCEL_ORG_ID: ID da Organização ou Team no Vercel (team_7eeg2nRH1H9CPpXCGKqYmlrN)
+# - VERCEL_PROJECT_ID_FRONTEND: ID do projeto savour-frontend (prj_uG4K1QnEVsBChGDLkyvFyoH5ooFe)
+# - VERCEL_PROJECT_ID_BACKEND: ID do projeto savour-backend (prj_vSePF5BkXZABbBbNQvxkd1MsDwKl)
+
+name: CI/CD Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  ci:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter backend exec prisma generate
+
+      - name: Run Lint
+        run: pnpm lint
+
+      - name: Run Tests
+        run: pnpm --filter backend test
+
+  deploy-frontend:
+    name: Deploy Frontend to Vercel
+    needs: ci
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel Project Information
+        working-directory: apps/frontend
+        run: vercel pull --yes --environment=production
+
+      - name: Build Project Artifacts
+        working-directory: apps/frontend
+        run: vercel build --prod
+
+      - name: Deploy Project Artifacts to Vercel
+        working-directory: apps/frontend
+        run: vercel deploy --prebuilt --prod
+
+  deploy-backend:
+    name: Deploy Backend to Vercel
+    needs: ci
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_BACKEND }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter backend exec prisma generate
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel Project Information
+        working-directory: apps/backend
+        run: vercel pull --yes --environment=production
+
+      - name: Build Project Artifacts
+        working-directory: apps/backend
+        run: vercel build --prod
+
+      - name: Deploy Project Artifacts to Vercel
+        working-directory: apps/backend
+        run: vercel deploy --prebuilt --prod
