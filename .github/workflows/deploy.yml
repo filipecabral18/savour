@@ -56,6 +56,17 @@ jobs:
       - name: Run Tests
         run: pnpm --filter backend test
 
+  # IMPORTANTE (monorepo): os comandos da Vercel CLI rodam a partir da RAIZ do
+  # repositorio, nunca de dentro de apps/*. Cada projeto Vercel ja tem o
+  # "Root Directory" configurado (apps/frontend / apps/backend); o `vercel pull`
+  # baixa essa configuracao para .vercel/project.json e a Vercel aplica o Root
+  # Directory por cima do diretorio atual. Rodar dentro de apps/frontend fazia a
+  # CLI procurar apps/frontend/apps/frontend/.vercel/output -> "path does not exist".
+  #
+  # Tambem NAO usamos `vercel build --prebuilt`: o build local com pnpm em CI e
+  # quebrado (vercel/vercel#15204, PATHs do pnpm hardcoded p/ a infra da Vercel).
+  # Por isso enviamos o codigo com `vercel deploy` e deixamos a Vercel buildar
+  # remotamente usando o Build Command de cada projeto.
   deploy-frontend:
     name: Deploy Frontend to Vercel
     needs: ci
@@ -73,28 +84,14 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
       - name: Pull Vercel Project Information
-        working-directory: apps/frontend
-        run: vercel pull --yes --environment=production
+        run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
 
-      - name: Build Project Artifacts
-        working-directory: apps/frontend
-        run: vercel build --prod
-
-      - name: Deploy Project Artifacts to Vercel
-        working-directory: apps/frontend
-        run: vercel deploy --prebuilt --prod
+      - name: Deploy to Vercel (build remoto)
+        run: vercel deploy --prod --token=$VERCEL_TOKEN
 
   deploy-backend:
     name: Deploy Backend to Vercel
@@ -113,28 +110,11 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma Client
-        run: pnpm --filter backend exec prisma generate
-
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
       - name: Pull Vercel Project Information
-        working-directory: apps/backend
-        run: vercel pull --yes --environment=production
+        run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
 
-      - name: Build Project Artifacts
-        working-directory: apps/backend
-        run: vercel build --prod
-
-      - name: Deploy Project Artifacts to Vercel
-        working-directory: apps/backend
-        run: vercel deploy --prebuilt --prod
+      - name: Deploy to Vercel (build remoto)
+        run: vercel deploy --prod --token=$VERCEL_TOKEN
