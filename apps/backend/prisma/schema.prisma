@@ -12,3 +12,29 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model Establishment {
+  id           String        @id @default(uuid())
+  name         String
+  capacity     Int           // total seats
+  turnoverTime Int           @default(120) // in minutes
+  reservations Reservation[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Reservation {
+  id              String        @id @default(uuid())
+  establishmentId String
+  establishment   Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  date            DateTime      // date and start time of reservation
+  guests          Int           // seats needed
+  name            String
+  contact         String
+  status          String        @default("CONFIRMED") // CONFIRMED, CHECKED_IN, CANCELLED, NO_SHOW
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([establishmentId, date])
+}
+
