@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import { RedisService } from '../database/redis.service.js';
 import { randomUUID } from 'crypto';
@@ -10,7 +14,11 @@ export class EstablishmentsService {
     private readonly redisService: RedisService,
   ) {}
 
-  async checkAvailability(establishmentId: string, dateStr: string, guests: number) {
+  async checkAvailability(
+    establishmentId: string,
+    dateStr: string,
+    guests: number,
+  ) {
     if (!guests || guests <= 0) {
       throw new BadRequestException('Guests count must be greater than zero');
     }
@@ -32,23 +40,31 @@ export class EstablishmentsService {
     const { capacity, turnoverTime } = establishment;
 
     // 2. Calculate overlap dates
-    const startLimit = new Date(requestedDate.getTime() - turnoverTime * 60 * 1000);
-    const endLimit = new Date(requestedDate.getTime() + turnoverTime * 60 * 1000);
+    const startLimit = new Date(
+      requestedDate.getTime() - turnoverTime * 60 * 1000,
+    );
+    const endLimit = new Date(
+      requestedDate.getTime() + turnoverTime * 60 * 1000,
+    );
 
     // 3. Query overlapping reservations
-    const overlappingReservations = await this.databaseService.reservation.findMany({
-      where: {
-        establishmentId,
-        status: { not: 'CANCELLED' },
-        date: {
-          gt: startLimit,
-          lt: endLimit,
+    const overlappingReservations =
+      await this.databaseService.reservation.findMany({
+        where: {
+          establishmentId,
+          status: { not: 'CANCELLED' },
+          date: {
+            gt: startLimit,
+            lt: endLimit,
+          },
         },
-      },
-    });
+      });
 
     // 4. Sum up reserved seats
-    const reservedSeats = overlappingReservations.reduce((sum, res) => sum + res.guests, 0);
+    const reservedSeats = overlappingReservations.reduce(
+      (sum, res) => sum + res.guests,
+      0,
+    );
 
     // 5. Evaluate availability
     const remainingCapacity = capacity - reservedSeats;
@@ -101,8 +117,12 @@ export class EstablishmentsService {
       const { capacity, turnoverTime } = establishment;
 
       // 2. Query overlapping reservations
-      const startLimit = new Date(requestedDate.getTime() - turnoverTime * 60 * 1000);
-      const endLimit = new Date(requestedDate.getTime() + turnoverTime * 60 * 1000);
+      const startLimit = new Date(
+        requestedDate.getTime() - turnoverTime * 60 * 1000,
+      );
+      const endLimit = new Date(
+        requestedDate.getTime() + turnoverTime * 60 * 1000,
+      );
 
       const overlappingReservations = await tx.reservation.findMany({
         where: {
@@ -116,11 +136,16 @@ export class EstablishmentsService {
       });
 
       // 3. Sum up reserved seats
-      const reservedSeats = overlappingReservations.reduce((sum, res) => sum + res.guests, 0);
+      const reservedSeats = overlappingReservations.reduce(
+        (sum, res) => sum + res.guests,
+        0,
+      );
       const remainingCapacity = capacity - reservedSeats;
 
       if (remainingCapacity < guests) {
-        throw new BadRequestException('No availability for the requested group size at this time');
+        throw new BadRequestException(
+          'No availability for the requested group size at this time',
+        );
       }
 
       // 4. Persist reservation
@@ -139,7 +164,11 @@ export class EstablishmentsService {
     });
   }
 
-  async getAlternativeSlots(establishmentId: string, dateStr: string, guests: number) {
+  async getAlternativeSlots(
+    establishmentId: string,
+    dateStr: string,
+    guests: number,
+  ) {
     if (!guests || guests <= 0) {
       throw new BadRequestException('Guests count must be greater than zero');
     }
@@ -165,7 +194,16 @@ export class EstablishmentsService {
 
     // Define standard dinner slots for the B2C experience
     const timeOptions = [
-      '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00', '22:30'
+      '18:00',
+      '18:30',
+      '19:00',
+      '19:30',
+      '20:00',
+      '20:30',
+      '21:00',
+      '21:30',
+      '22:00',
+      '22:30',
     ];
 
     // Calculate overall time limits to query database once
@@ -175,8 +213,12 @@ export class EstablishmentsService {
     const earliestDate = new Date(earliestTimeStr);
     const latestDate = new Date(latestTimeStr);
 
-    const queryStartLimit = new Date(earliestDate.getTime() - turnoverTime * 60 * 1000);
-    const queryEndLimit = new Date(latestDate.getTime() + turnoverTime * 60 * 1000);
+    const queryStartLimit = new Date(
+      earliestDate.getTime() - turnoverTime * 60 * 1000,
+    );
+    const queryEndLimit = new Date(
+      latestDate.getTime() + turnoverTime * 60 * 1000,
+    );
 
     // 2. Fetch all reservations that can overlap with any of these slots
     const reservations = await this.databaseService.reservation.findMany({
@@ -209,7 +251,10 @@ export class EstablishmentsService {
         return resTime > slotStart.getTime() && resTime < slotEnd.getTime();
       });
 
-      const reservedSeats = overlapping.reduce((sum, res) => sum + res.guests, 0);
+      const reservedSeats = overlapping.reduce(
+        (sum, res) => sum + res.guests,
+        0,
+      );
       const remainingCapacity = capacity - reservedSeats;
 
       if (remainingCapacity >= guests) {
@@ -223,7 +268,12 @@ export class EstablishmentsService {
     return alternatives;
   }
 
-  async addToWaitlist(establishmentId: string, guests: number, name: string, contact: string) {
+  async addToWaitlist(
+    establishmentId: string,
+    guests: number,
+    name: string,
+    contact: string,
+  ) {
     if (!guests || guests <= 0) {
       throw new BadRequestException('Guests count must be greater than zero');
     }
@@ -256,10 +306,17 @@ export class EstablishmentsService {
     });
 
     // Add to Sorted Set
-    await this.redisService.client.zadd(`waitlist:${establishmentId}`, Date.now(), entryId);
+    await this.redisService.client.zadd(
+      `waitlist:${establishmentId}`,
+      Date.now(),
+      entryId,
+    );
 
     // Get position
-    const rank = await this.redisService.client.zrank(`waitlist:${establishmentId}`, entryId);
+    const rank = await this.redisService.client.zrank(
+      `waitlist:${establishmentId}`,
+      entryId,
+    );
     const position = rank !== null ? rank + 1 : 1;
 
     return {
@@ -271,14 +328,19 @@ export class EstablishmentsService {
 
   async getWaitlistStatus(establishmentId: string, entryId: string) {
     // Fetch details
-    const entry = await this.redisService.client.hgetall(`waitlist-entry:${entryId}`);
+    const entry = await this.redisService.client.hgetall(
+      `waitlist-entry:${entryId}`,
+    );
     if (!entry || Object.keys(entry).length === 0) {
       throw new NotFoundException('Waitlist entry not found');
     }
 
     let position = 0;
     if (entry.status === 'WAITING') {
-      const rank = await this.redisService.client.zrank(`waitlist:${establishmentId}`, entryId);
+      const rank = await this.redisService.client.zrank(
+        `waitlist:${establishmentId}`,
+        entryId,
+      );
       position = rank !== null ? rank + 1 : 1;
     }
 
@@ -288,7 +350,7 @@ export class EstablishmentsService {
       select: { turnoverTime: true },
     });
     const turnoverTime = establishment?.turnoverTime || 120;
-    
+
     // Simple estimated wait time: position * 15 minutes (using turnoverTime / 8)
     const estimatedWaitTime = position * Math.round(turnoverTime / 8);
 
@@ -304,15 +366,20 @@ export class EstablishmentsService {
   }
 
   async removeFromWaitlist(establishmentId: string, entryId: string) {
-    const entry = await this.redisService.client.hgetall(`waitlist-entry:${entryId}`);
+    const entry = await this.redisService.client.hgetall(
+      `waitlist-entry:${entryId}`,
+    );
     if (!entry || Object.keys(entry).length === 0) {
       throw new NotFoundException('Waitlist entry not found');
     }
 
     // Remove from both sets
     await this.redisService.client.zrem(`waitlist:${establishmentId}`, entryId);
-    await this.redisService.client.zrem(`waitlist-called:${establishmentId}`, entryId);
-    
+    await this.redisService.client.zrem(
+      `waitlist-called:${establishmentId}`,
+      entryId,
+    );
+
     // Delete entry hash
     await this.redisService.client.del(`waitlist-entry:${entryId}`);
 
@@ -320,14 +387,19 @@ export class EstablishmentsService {
   }
 
   async checkInWaitlist(establishmentId: string, entryId: string) {
-    const entry = await this.redisService.client.hgetall(`waitlist-entry:${entryId}`);
+    const entry = await this.redisService.client.hgetall(
+      `waitlist-entry:${entryId}`,
+    );
     if (!entry || Object.keys(entry).length === 0) {
       throw new NotFoundException('Waitlist entry not found');
     }
 
     // Check-in simply clears the customer from the waitlist
     await this.redisService.client.zrem(`waitlist:${establishmentId}`, entryId);
-    await this.redisService.client.zrem(`waitlist-called:${establishmentId}`, entryId);
+    await this.redisService.client.zrem(
+      `waitlist-called:${establishmentId}`,
+      entryId,
+    );
     await this.redisService.client.del(`waitlist-entry:${entryId}`);
 
     return { success: true };
@@ -335,7 +407,11 @@ export class EstablishmentsService {
 
   async callNextInWaitlist(establishmentId: string) {
     // Get first entry in Sorted Set (active waiting queue)
-    const nextEntries = await this.redisService.client.zrange(`waitlist:${establishmentId}`, 0, 0);
+    const nextEntries = await this.redisService.client.zrange(
+      `waitlist:${establishmentId}`,
+      0,
+      0,
+    );
     if (!nextEntries || nextEntries.length === 0) {
       return { message: 'Waitlist is empty' };
     }
@@ -343,16 +419,26 @@ export class EstablishmentsService {
     const entryId = nextEntries[0];
 
     // Update status to READY
-    await this.redisService.client.hset(`waitlist-entry:${entryId}`, 'status', 'READY');
+    await this.redisService.client.hset(
+      `waitlist-entry:${entryId}`,
+      'status',
+      'READY',
+    );
 
     // Remove from active Sorted Set so rest of the queue shifts up
     await this.redisService.client.zrem(`waitlist:${establishmentId}`, entryId);
 
     // Add to called Sorted Set
-    await this.redisService.client.zadd(`waitlist-called:${establishmentId}`, Date.now(), entryId);
+    await this.redisService.client.zadd(
+      `waitlist-called:${establishmentId}`,
+      Date.now(),
+      entryId,
+    );
 
     // Fetch updated entry
-    const entry = await this.redisService.client.hgetall(`waitlist-entry:${entryId}`);
+    const entry = await this.redisService.client.hgetall(
+      `waitlist-entry:${entryId}`,
+    );
 
     return {
       id: entryId,
@@ -365,16 +451,26 @@ export class EstablishmentsService {
 
   async getWaitlist(establishmentId: string) {
     // 1. Get called entries
-    const calledIds = await this.redisService.client.zrange(`waitlist-called:${establishmentId}`, 0, -1);
-    
+    const calledIds = await this.redisService.client.zrange(
+      `waitlist-called:${establishmentId}`,
+      0,
+      -1,
+    );
+
     // 2. Get waiting entries
-    const waitingIds = await this.redisService.client.zrange(`waitlist:${establishmentId}`, 0, -1);
+    const waitingIds = await this.redisService.client.zrange(
+      `waitlist:${establishmentId}`,
+      0,
+      -1,
+    );
 
     const waitlist: any[] = [];
 
     // Fetch and map called entries
     for (const entryId of calledIds) {
-      const entry = await this.redisService.client.hgetall(`waitlist-entry:${entryId}`);
+      const entry = await this.redisService.client.hgetall(
+        `waitlist-entry:${entryId}`,
+      );
       if (entry && Object.keys(entry).length > 0) {
         waitlist.push({
           id: entryId,
@@ -391,7 +487,9 @@ export class EstablishmentsService {
     // Fetch and map waiting entries
     let idx = 1;
     for (const entryId of waitingIds) {
-      const entry = await this.redisService.client.hgetall(`waitlist-entry:${entryId}`);
+      const entry = await this.redisService.client.hgetall(
+        `waitlist-entry:${entryId}`,
+      );
       if (entry && Object.keys(entry).length > 0) {
         waitlist.push({
           id: entryId,
@@ -433,10 +531,16 @@ export class EstablishmentsService {
     });
   }
 
-  async updateReservationStatus(establishmentId: string, reservationId: string, status: string) {
+  async updateReservationStatus(
+    establishmentId: string,
+    reservationId: string,
+    status: string,
+  ) {
     const validStatuses = ['CONFIRMED', 'CHECKED_IN', 'NO_SHOW', 'CANCELLED'];
     if (!validStatuses.includes(status)) {
-      throw new BadRequestException(`Invalid status. Allowed values: ${validStatuses.join(', ')}`);
+      throw new BadRequestException(
+        `Invalid status. Allowed values: ${validStatuses.join(', ')}`,
+      );
     }
 
     const reservation = await this.databaseService.reservation.findUnique({

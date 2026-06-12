@@ -84,7 +84,7 @@ export default function Home() {
           
           // Play a gentle check-in chime
           try {
-            const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const context = new (window.AudioContext || (window as unknown as { webkitAudioContext: new () => AudioContext }).webkitAudioContext)();
             const osc = context.createOscillator();
             const gain = context.createGain();
             osc.connect(gain);
@@ -101,7 +101,7 @@ export default function Home() {
             gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
             osc.start(now);
             osc.stop(now + 0.6);
-          } catch (e) {
+          } catch {
             // AudioContext not supported/allowed
           }
         }

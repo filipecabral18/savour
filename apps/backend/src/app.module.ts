@@ -10,4 +10,3 @@ import { EstablishmentsModule } from './establishments/establishments.module.js'
   providers: [AppService],
 })
 export class AppModule {}
-

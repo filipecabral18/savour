@@ -7,11 +7,11 @@ export async function getBackendStatus() {
       throw new Error(`HTTP error! status: ${res.status}`);
     }
     return await res.json();
-  } catch (error: any) {
+  } catch (error) {
     return {
       status: 'OFFLINE',
       database: 'Unknown',
-      error: error.message || 'Failed to fetch'
+      error: error instanceof Error ? error.message : 'Failed to fetch'
     };
   }
 }
@@ -29,10 +29,10 @@ export async function checkAvailability(establishmentId: string, date: string, g
       throw new Error(errorData.message || `HTTP status ${res.status}`);
     }
     return await res.json();
-  } catch (error: any) {
+  } catch (error) {
     return {
       available: false,
-      error: error.message || 'Failed to check availability',
+      error: error instanceof Error ? error.message : 'Failed to check availability',
     };
   }
 }
@@ -60,9 +60,9 @@ export async function createReservation(
       throw new Error(errorData.message || `HTTP status ${res.status}`);
     }
     return await res.json();
-  } catch (error: any) {
+  } catch (error) {
     return {
-      error: error.message || 'Failed to confirm reservation',
+      error: error instanceof Error ? error.message : 'Failed to confirm reservation',
     };
   }
 }
@@ -84,7 +84,7 @@ export async function getAlternativeSlots(
       throw new Error(errorData.message || `HTTP status ${res.status}`);
     }
     return await res.json();
-  } catch (error: any) {
+  } catch {
     return [];
   }
 }
@@ -111,9 +111,9 @@ export async function addToWaitlist(
       throw new Error(errorData.message || `HTTP status ${res.status}`);
     }
     return await res.json();
-  } catch (error: any) {
+  } catch (error) {
     return {
-      error: error.message || 'Failed to enter waitlist',
+      error: error instanceof Error ? error.message : 'Failed to enter waitlist',
     };
   }
 }
@@ -132,9 +132,9 @@ export async function getWaitlistStatus(
       throw new Error(errorData.message || `HTTP status ${res.status}`);
     }
     return await res.json();
-  } catch (error: any) {
+  } catch (error) {
     return {
-      error: error.message || 'Failed to fetch waitlist status',
+      error: error instanceof Error ? error.message : 'Failed to fetch waitlist status',
     };
   }
 }
@@ -155,9 +155,9 @@ export async function removeFromWaitlist(
       throw new Error(errorData.message || `HTTP status ${res.status}`);
     }
     return await res.json();
-  } catch (error: any) {
+  } catch (error) {
     return {
-      error: error.message || 'Failed to leave waitlist',
+      error: error instanceof Error ? error.message : 'Failed to leave waitlist',
     };
   }
 }
@@ -177,7 +177,7 @@ export async function getReservations(
       throw new Error(errorData.message || `HTTP status ${res.status}`);
     }
     return await res.json();
-  } catch (error: any) {
+  } catch {
     return [];
   }
 }
@@ -203,9 +203,9 @@ export async function updateReservationStatus(
       throw new Error(errorData.message || `HTTP status ${res.status}`);
     }
     return await res.json();
-  } catch (error: any) {
+  } catch (error) {
     return {
-      error: error.message || 'Failed to update reservation status',
+      error: error instanceof Error ? error.message : 'Failed to update reservation status',
     };
   }
 }
@@ -222,7 +222,7 @@ export async function getWaitlist(
       throw new Error(errorData.message || `HTTP status ${res.status}`);
     }
     return await res.json();
-  } catch (error: any) {
+  } catch {
     return [];
   }
 }
@@ -243,9 +243,9 @@ export async function checkInWaitlist(
       throw new Error(errorData.message || `HTTP status ${res.status}`);
     }
     return await res.json();
-  } catch (error: any) {
+  } catch (error) {
     return {
-      error: error.message || 'Failed to check in waitlist entry',
+      error: error instanceof Error ? error.message : 'Failed to check in waitlist entry',
     };
   }
 }
@@ -265,9 +265,9 @@ export async function callNextInWaitlist(
       throw new Error(errorData.message || `HTTP status ${res.status}`);
     }
     return await res.json();
-  } catch (error: any) {
+  } catch (error) {
     return {
-      error: error.message || 'Failed to call next entry in waitlist',
+      error: error instanceof Error ? error.message : 'Failed to call next entry in waitlist',
     };
   }
 }

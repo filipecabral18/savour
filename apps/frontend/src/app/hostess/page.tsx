@@ -74,13 +74,19 @@ export default function HostessDashboard() {
 
   // Poll for updates every 6 seconds to keep the hostess dashboard synced in real-time
   useEffect(() => {
-    fetchData(true);
+    const timer = setTimeout(() => {
+      fetchData(true);
+    }, 0);
     
     const interval = setInterval(() => {
       fetchData(false);
     }, 6000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date, activeTab]);
 
   const handleUpdateReservationStatus = async (reservationId: string, status: string) => {
@@ -105,13 +111,13 @@ export default function HostessDashboard() {
     } else {
       // Play a quick alert sound on the dashboard
       try {
-        const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const context = new (window.AudioContext || (window as unknown as { webkitAudioContext: new () => AudioContext }).webkitAudioContext)();
         const osc = context.createOscillator();
         osc.connect(context.destination);
         osc.frequency.setValueAtTime(440, context.currentTime);
         osc.start(context.currentTime);
         osc.stop(context.currentTime + 0.1);
-      } catch(e){}
+      } catch {}
       
       await fetchData(false);
     }

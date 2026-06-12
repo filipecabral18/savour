@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { EstablishmentsService } from './establishments.service.js';
 
 @Controller('v1/establishments')
@@ -17,7 +27,8 @@ export class EstablishmentsController {
   @Post(':id/reservations')
   async createReservation(
     @Param('id') id: string,
-    @Body() body: { date: string; guests: number; name: string; contact: string },
+    @Body()
+    body: { date: string; guests: number; name: string; contact: string },
   ) {
     return this.establishmentsService.createReservation(
       id,
@@ -29,10 +40,7 @@ export class EstablishmentsController {
   }
 
   @Get(':id/reservations')
-  async getReservations(
-    @Param('id') id: string,
-    @Query('date') date: string,
-  ) {
+  async getReservations(@Param('id') id: string, @Query('date') date: string) {
     return this.establishmentsService.getReservations(id, date);
   }
 
@@ -42,7 +50,11 @@ export class EstablishmentsController {
     @Param('reservationId') reservationId: string,
     @Body('status') status: string,
   ) {
-    return this.establishmentsService.updateReservationStatus(id, reservationId, status);
+    return this.establishmentsService.updateReservationStatus(
+      id,
+      reservationId,
+      status,
+    );
   }
 
   @Get(':id/alternative-slots')
@@ -68,9 +80,7 @@ export class EstablishmentsController {
   }
 
   @Get(':id/waitlist')
-  async getWaitlist(
-    @Param('id') id: string,
-  ) {
+  async getWaitlist(@Param('id') id: string) {
     return this.establishmentsService.getWaitlist(id);
   }
 
@@ -99,9 +109,7 @@ export class EstablishmentsController {
   }
 
   @Post(':id/waitlist/call-next')
-  async callNextInWaitlist(
-    @Param('id') id: string,
-  ) {
+  async callNextInWaitlist(@Param('id') id: string) {
     return this.establishmentsService.callNextInWaitlist(id);
   }
 }
