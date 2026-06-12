@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
 import { EstablishmentsService } from './establishments.service.js';
 
 @Controller('v1/establishments')
@@ -28,6 +28,23 @@ export class EstablishmentsController {
     );
   }
 
+  @Get(':id/reservations')
+  async getReservations(
+    @Param('id') id: string,
+    @Query('date') date: string,
+  ) {
+    return this.establishmentsService.getReservations(id, date);
+  }
+
+  @Patch(':id/reservations/:reservationId/status')
+  async updateReservationStatus(
+    @Param('id') id: string,
+    @Param('reservationId') reservationId: string,
+    @Body('status') status: string,
+  ) {
+    return this.establishmentsService.updateReservationStatus(id, reservationId, status);
+  }
+
   @Get(':id/alternative-slots')
   async getAlternativeSlots(
     @Param('id') id: string,
@@ -50,6 +67,13 @@ export class EstablishmentsController {
     );
   }
 
+  @Get(':id/waitlist')
+  async getWaitlist(
+    @Param('id') id: string,
+  ) {
+    return this.establishmentsService.getWaitlist(id);
+  }
+
   @Get(':id/waitlist/:entryId')
   async getWaitlistStatus(
     @Param('id') id: string,
@@ -64,6 +88,14 @@ export class EstablishmentsController {
     @Param('entryId') entryId: string,
   ) {
     return this.establishmentsService.removeFromWaitlist(id, entryId);
+  }
+
+  @Post(':id/waitlist/:entryId/check-in')
+  async checkInWaitlist(
+    @Param('id') id: string,
+    @Param('entryId') entryId: string,
+  ) {
+    return this.establishmentsService.checkInWaitlist(id, entryId);
   }
 
   @Post(':id/waitlist/call-next')

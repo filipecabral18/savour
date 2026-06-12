@@ -309,8 +309,9 @@ export class EstablishmentsService {
       throw new NotFoundException('Waitlist entry not found');
     }
 
-    // Remove from Sorted Set
+    // Remove from both sets
     await this.redisService.client.zrem(`waitlist:${establishmentId}`, entryId);
+    await this.redisService.client.zrem(`waitlist-called:${establishmentId}`, entryId);
     
     // Delete entry hash
     await this.redisService.client.del(`waitlist-entry:${entryId}`);
@@ -318,8 +319,22 @@ export class EstablishmentsService {
     return { success: true };
   }
 
+  async checkInWaitlist(establishmentId: string, entryId: string) {
+    const entry = await this.redisService.client.hgetall(`waitlist-entry:${entryId}`);
+    if (!entry || Object.keys(entry).length === 0) {
+      throw new NotFoundException('Waitlist entry not found');
+    }
+
+    // Check-in simply clears the customer from the waitlist
+    await this.redisService.client.zrem(`waitlist:${establishmentId}`, entryId);
+    await this.redisService.client.zrem(`waitlist-called:${establishmentId}`, entryId);
+    await this.redisService.client.del(`waitlist-entry:${entryId}`);
+
+    return { success: true };
+  }
+
   async callNextInWaitlist(establishmentId: string) {
-    // Get first entry in Sorted Set
+    // Get first entry in Sorted Set (active waiting queue)
     const nextEntries = await this.redisService.client.zrange(`waitlist:${establishmentId}`, 0, 0);
     if (!nextEntries || nextEntries.length === 0) {
       return { message: 'Waitlist is empty' };
@@ -330,8 +345,11 @@ export class EstablishmentsService {
     // Update status to READY
     await this.redisService.client.hset(`waitlist-entry:${entryId}`, 'status', 'READY');
 
-    // Remove from Sorted Set so rest of the queue shifts up
+    // Remove from active Sorted Set so rest of the queue shifts up
     await this.redisService.client.zrem(`waitlist:${establishmentId}`, entryId);
+
+    // Add to called Sorted Set
+    await this.redisService.client.zadd(`waitlist-called:${establishmentId}`, Date.now(), entryId);
 
     // Fetch updated entry
     const entry = await this.redisService.client.hgetall(`waitlist-entry:${entryId}`);
@@ -343,5 +361,95 @@ export class EstablishmentsService {
       status: 'READY',
       guests: parseInt(entry.guests, 10),
     };
+  }
+
+  async getWaitlist(establishmentId: string) {
+    // 1. Get called entries
+    const calledIds = await this.redisService.client.zrange(`waitlist-called:${establishmentId}`, 0, -1);
+    
+    // 2. Get waiting entries
+    const waitingIds = await this.redisService.client.zrange(`waitlist:${establishmentId}`, 0, -1);
+
+    const waitlist: any[] = [];
+
+    // Fetch and map called entries
+    for (const entryId of calledIds) {
+      const entry = await this.redisService.client.hgetall(`waitlist-entry:${entryId}`);
+      if (entry && Object.keys(entry).length > 0) {
+        waitlist.push({
+          id: entryId,
+          name: entry.name,
+          contact: entry.contact,
+          guests: parseInt(entry.guests, 10),
+          status: entry.status,
+          position: 0,
+          createdAt: entry.createdAt,
+        });
+      }
+    }
+
+    // Fetch and map waiting entries
+    let idx = 1;
+    for (const entryId of waitingIds) {
+      const entry = await this.redisService.client.hgetall(`waitlist-entry:${entryId}`);
+      if (entry && Object.keys(entry).length > 0) {
+        waitlist.push({
+          id: entryId,
+          name: entry.name,
+          contact: entry.contact,
+          guests: parseInt(entry.guests, 10),
+          status: entry.status,
+          position: idx++,
+          createdAt: entry.createdAt,
+        });
+      }
+    }
+
+    return waitlist;
+  }
+
+  async getReservations(establishmentId: string, dateStr: string) {
+    if (!dateStr) {
+      throw new BadRequestException('Date is required');
+    }
+
+    const startOfDay = new Date(`${dateStr}T00:00:00`);
+    const endOfDay = new Date(`${dateStr}T23:59:59.999`);
+    if (isNaN(startOfDay.getTime())) {
+      throw new BadRequestException('Invalid date format');
+    }
+
+    return this.databaseService.reservation.findMany({
+      where: {
+        establishmentId,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      orderBy: {
+        date: 'asc',
+      },
+    });
+  }
+
+  async updateReservationStatus(establishmentId: string, reservationId: string, status: string) {
+    const validStatuses = ['CONFIRMED', 'CHECKED_IN', 'NO_SHOW', 'CANCELLED'];
+    if (!validStatuses.includes(status)) {
+      throw new BadRequestException(`Invalid status. Allowed values: ${validStatuses.join(', ')}`);
+    }
+
+    const reservation = await this.databaseService.reservation.findUnique({
+      where: { id: reservationId },
+    });
+
+    if (!reservation || reservation.establishmentId !== establishmentId) {
+      throw new NotFoundException('Reservation not found');
+    }
+
+    return this.databaseService.reservation.update({
+      where: { id: reservationId },
+      data: { status },
+    });
   }
 }
