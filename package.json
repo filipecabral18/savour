@@ -1,0 +1,17 @@
+{
+  "name": "savour-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo para a plataforma Savour (reservas e fila de espera virtual)",
+  "scripts": {
+    "dev": "pnpm --filter \"*\" dev",
+    "build": "pnpm --filter \"*\" build",
+    "start": "pnpm --filter \"*\" start",
+    "lint": "pnpm --filter \"*\" lint",
+    "db:migrate": "pnpm --filter backend db:migrate",
+    "db:generate": "pnpm --filter backend db:generate"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

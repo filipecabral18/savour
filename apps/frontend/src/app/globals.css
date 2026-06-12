@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F5F4F2; /* neutral-100 as base background */
+  --foreground: #1C1A19; /* neutral-900 as base text */
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Primary Palete (Terracota) */
+  --color-primary-50: #FDF4F0;
+  --color-primary-100: #FBE4D8;
+  --color-primary-300: #EFA98C;
+  --color-primary-500: #D9603B;
+  --color-primary-600: #BE4E2E;
+  --color-primary-700: #9A3E25;
+
+  /* Secondary Palete (Deep Green) */
+  --color-secondary-500: #2E4A47;
+  --color-secondary-300: #6E8B87;
+
+  /* Semantic Colors */
+  --color-success-500: #2E9E5B;
+  --color-warning-500: #E0A93B;
+  --color-danger-500: #D14343;
+  --color-info-500: #3B7DD8;
+
+  /* Neutrals */
+  --color-neutral-900: #1C1A19;
+  --color-neutral-700: #44403E;
+  --color-neutral-500: #78716C;
+  --color-neutral-300: #D6D3D1;
+  --color-neutral-100: #F5F4F2;
+  --color-neutral-0: #FFFFFF;
+
+  /* Typography */
+  --font-serif: Fraunces, Georgia, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1C1A19;
+    --foreground: #F5F4F2;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
