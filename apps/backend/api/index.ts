@@ -2,7 +2,11 @@ import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { AppModule } from '../src/app.module.js';
+// Importa o build tsc (dist), nao o fonte .ts: o bundler da Vercel (esbuild) nao
+// emite metadados de decorator, o que quebraria a injecao de dependencias do Nest.
+// O dist e gerado pelo Build Command (prisma generate && nest build) antes do
+// empacotamento da function.
+import { AppModule } from '../dist/src/app.module.js';
 
 const expressApp = express();
 
