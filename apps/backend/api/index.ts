@@ -17,7 +17,26 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(
     AppModule,
     new ExpressAdapter(expressApp),
-    { cors: true },
+    {
+      cors: {
+        origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+          if (!origin) return callback(null, true);
+          const allowedOrigins = [
+            'http://localhost:3000',
+            'http://localhost:3002',
+            'https://savour-frontend.vercel.app',
+          ];
+          const isAllowed = allowedOrigins.includes(origin) || origin.endsWith('.vercel.app');
+          if (isAllowed) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
+        },
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+        credentials: true,
+      }
+    },
   );
   await app.init();
 }

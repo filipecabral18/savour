@@ -9,7 +9,13 @@ export class RedisService implements OnModuleDestroy {
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379/0';
     // Handle ESM default export interop
     const RedisConstructor = (Redis as any).default || Redis;
-    this.client = new RedisConstructor(redisUrl);
+    this.client = new RedisConstructor(redisUrl, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 0,
+      enableReadyCheck: false,
+      connectTimeout: 10000,
+      ...(redisUrl.startsWith('rediss://') ? { tls: {} } : {}),
+    });
   }
 
   onModuleDestroy() {

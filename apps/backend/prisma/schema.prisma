@@ -16,7 +16,7 @@ datasource db {
 model Establishment {
   id           String        @id @default(uuid())
   name         String
-  capacity     Int           // total seats
+  capacity     Int // total seats
   turnoverTime Int           @default(120) // in minutes
   reservations Reservation[]
   createdAt    DateTime      @default(now())
@@ -27,8 +27,8 @@ model Reservation {
   id              String        @id @default(uuid())
   establishmentId String
   establishment   Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
-  date            DateTime      // date and start time of reservation
-  guests          Int           // seats needed
+  date            DateTime // date and start time of reservation
+  guests          Int // seats needed
   name            String
   contact         String
   status          String        @default("CONFIRMED") // CONFIRMED, CHECKED_IN, CANCELLED, NO_SHOW
@@ -37,4 +37,3 @@ model Reservation {
 
   @@index([establishmentId, date])
 }
-
