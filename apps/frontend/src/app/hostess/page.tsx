@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useClerk, UserButton } from "@clerk/nextjs";
 import { 
   Calendar, 
   Clock, 
@@ -46,6 +47,7 @@ interface WaitlistEntry {
 }
 
 export default function HostessDashboard() {
+  const { signOut } = useClerk();
   const todayStr = new Date().toISOString().split("T")[0];
   
   const [date, setDate] = useState(todayStr);
@@ -180,11 +182,19 @@ export default function HostessDashboard() {
               Configurações
             </button>
             <span className="h-4 w-px bg-white/20" />
-            {/* Logout (Placeholder) */}
-            <button className="flex items-center gap-1.5 hover:text-danger-500 transition-colors font-medium opacity-80 hover:opacity-100 cursor-pointer">
+            {/* Logout (Clerk) */}
+            <button 
+              onClick={() => signOut({ redirectUrl: "/" })}
+              className="flex items-center gap-1.5 hover:text-danger-500 transition-colors font-medium opacity-80 hover:opacity-100 cursor-pointer"
+            >
               <LogOut className="w-4 h-4" />
               Sair
             </button>
+            <span className="h-4 w-px bg-white/20" />
+            {/* Botão de Usuário Clerk */}
+            <div className="flex items-center">
+              <UserButton />
+            </div>
           </div>
         </div>
       </header>
